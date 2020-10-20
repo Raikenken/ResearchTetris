@@ -59,8 +59,8 @@ colors = [
 
 # Define the shapes of the single parts
 tetris_shapes = [
-    [[1, 1, 1],
-     [0, 1, 0]],
+    [[0, 1, 0],
+     [1, 1, 1]],
 
     [[0, 2, 2],
      [2, 2, 0]],
@@ -80,11 +80,24 @@ tetris_shapes = [
      [7, 7]]
 ]
 
+def rotate_counter_clockwise(shape):
+    return [
+        [ shape[y][x] for y in range(len(shape))]
+        for x in range(len(shape[0])-1 , -1, -1)
+    ]
+
 def rotate_clockwise(shape):
     return [
-        [ shape[y][x] for y in range(len(shape)) ]
-        for x in range(len(shape[0]) - 1, -1, -1)
+        [ shape[y][x] for y in range(len(shape)-1, -1, -1)]
+        for x in range(0, len(shape[0]))
     ]
+
+def rotate_reverse(shape):
+    shape[0], shape[1] = shape[1], shape[0]
+
+    shape[0] = shape[0][-1::-1]
+    shape[-1] = shape[-1][-1::-1]
+    return shape
 
 def check_collision(board, shape, offset):
     off_x, off_y = offset
@@ -253,9 +266,25 @@ class TetrisApp(object):
             while(not self.drop(True)):
                 pass
 
-    def rotate_stone(self):
+    def rotate_stone_clockwise(self):
         if not self.gameover and not self.paused:
             new_stone = rotate_clockwise(self.stone)
+            if not check_collision(self.board,
+                                   new_stone,
+                                   (self.stone_x, self.stone_y)):
+                self.stone = new_stone
+
+    def rotate_stone_counter_clockwise(self):
+        if not self.gameover and not self.paused:
+            new_stone = rotate_counter_clockwise(self.stone)
+            if not check_collision(self.board,
+                                   new_stone,
+                                   (self.stone_x, self.stone_y)):
+                self.stone = new_stone
+
+    def rotate_reverse(self):
+        if not self.gameover and not self.paused:
+            new_stone = rotate_reverse(self.stone)
             if not check_collision(self.board,
                                    new_stone,
                                    (self.stone_x, self.stone_y)):
@@ -275,10 +304,12 @@ class TetrisApp(object):
             'LEFT':     lambda:self.move(-1),
             'RIGHT':    lambda:self.move(+1),
             'DOWN':     lambda:self.drop(True),
-            'UP':       self.rotate_stone,
+            'UP':       self.rotate_stone_clockwise,
+            'z':        self.rotate_stone_counter_clockwise,
+            'a':        self.rotate_reverse,
             'p':        self.toggle_pause,
-            'SPACE':    self.start_game,
-            'RETURN':   self.insta_drop
+            'RETURN':    self.start_game,
+            'SPACE':   self.insta_drop
         }
 
         self.gameover = False
@@ -289,7 +320,7 @@ class TetrisApp(object):
             self.screen.fill((0,0,0))
             if self.gameover:
                 self.center_msg("""Game Over!\nYour score: %d
-Press space to continue""" % self.score)
+Press enter to continue""" % self.score)
             else:
                 if self.paused:
                     self.center_msg("Paused")
