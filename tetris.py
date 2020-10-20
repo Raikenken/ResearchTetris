@@ -93,10 +93,11 @@ def rotate_clockwise(shape):
     ]
 
 def rotate_reverse(shape):
-    shape[0], shape[1] = shape[1], shape[0]
+    shape[0], shape[-1] = shape[-1], shape[0]
 
-    shape[0] = shape[0][-1::-1]
-    shape[-1] = shape[-1][-1::-1]
+    for x in range(len(shape)):
+        shape[x] = shape[x][-1::-1]
+
     return shape
 
 def check_collision(board, shape, offset):
