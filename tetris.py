@@ -37,6 +37,7 @@
 # THE SOFTWARE.
 
 from random import randrange as rand
+import random
 import pygame, sys
 
 # The configuration
@@ -47,13 +48,13 @@ maxfps =    30
 
 colors = [
 (0,   0,   0  ),
-(255, 85,  85),
-(100, 200, 115),
-(120, 108, 245),
-(255, 140, 50 ),
-(50,  120, 52 ),
-(146, 202, 73 ),
-(150, 161, 218 ),
+(148, 0,  211),
+(50, 205, 50),
+(255, 0, 0),
+(0, 0, 255 ),
+(255,  165, 0 ),
+(3, 228, 248 ),
+(255, 255, 0 ),
 (35,  35,  35) # Helper color for background grid
 ]
 
@@ -147,12 +148,17 @@ class TetrisApp(object):
                                                      # mouse movement
                                                      # events, so we
                                                      # block them.
-        self.next_stone = tetris_shapes[rand(len(tetris_shapes))]
         self.init_game()
 
+    def generate_bag(self):
+        if len(self.bag) < 7:
+            self.bag += random.sample(tetris_shapes, len(tetris_shapes)) + random.sample(tetris_shapes, len(tetris_shapes))
+
+
     def new_stone(self):
+        self.generate_bag()
         self.stone = self.next_stone[:]
-        self.next_stone = tetris_shapes[rand(len(tetris_shapes))]
+        self.next_stone = self.bag.pop(0)
         self.stone_x = int(cols / 2 - len(self.stone[0])/2)
         self.stone_y = 0
 
@@ -163,10 +169,15 @@ class TetrisApp(object):
 
     def init_game(self):
         self.board = new_board()
+        self.bag = []
+        self.bag += random.sample(tetris_shapes, len(tetris_shapes)) + random.sample(tetris_shapes, len(tetris_shapes))
+        self.next_stone = self.bag.pop(0)
         self.new_stone()
         self.level = 1
         self.score = 0
         self.lines = 0
+        self.hold_stone = [[0,0,0],[0,0,0]]
+        self.switched = False
         pygame.time.set_timer(pygame.USEREVENT+1, 1000)
 
     def disp_msg(self, msg, topleft):
@@ -248,6 +259,7 @@ class TetrisApp(object):
                   self.stone,
                   (self.stone_x, self.stone_y))
                 self.new_stone()
+                self.switched = False
                 cleared_rows = 0
                 while True:
                     for i, row in enumerate(self.board[:-1]):
@@ -291,6 +303,17 @@ class TetrisApp(object):
                                    (self.stone_x, self.stone_y)):
                 self.stone = new_stone
 
+    def switch_hold(self):
+        if sum(self.hold_stone[0]) == 0 and not self.switched:
+            self.hold_stone = tetris_shapes[max(self.stone[0])-1]
+            self.new_stone()
+        elif not self.switched:
+            self.stone, self.hold_stone = self.hold_stone, tetris_shapes[max(self.stone[0])-1]
+
+        print(self.hold_stone)
+
+        self.switched = True
+
     def toggle_pause(self):
         self.paused = not self.paused
 
@@ -310,7 +333,8 @@ class TetrisApp(object):
             'a':        self.rotate_reverse,
             'p':        self.toggle_pause,
             'RETURN':    self.start_game,
-            'SPACE':   self.insta_drop
+            'SPACE':   self.insta_drop,
+            'LSHIFT':    self.switch_hold
         }
 
         self.gameover = False
@@ -342,6 +366,7 @@ Press enter to continue""" % self.score)
                         (self.stone_x, self.stone_y))
                     self.draw_matrix(self.next_stone,
                         (cols+1,2))
+                    self.draw_matrix(self.hold_stone, (cols+1, 15))
             pygame.display.update()
 
             for event in pygame.event.get():
