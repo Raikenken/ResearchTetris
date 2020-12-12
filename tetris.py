@@ -39,6 +39,8 @@
 from random import randrange as rand
 import random
 import pygame, sys
+import time
+from datetime import timedelta
 
 # The configuration
 cell_size = 18
@@ -164,20 +166,22 @@ class TetrisApp(object):
 
         if check_collision(self.board,
                            self.stone,
-                           (self.stone_x, self.stone_y)):
+                           (self.stone_x, self.stone_y)) or self.lines == 10:
+            self.timer = time.time() - self.timer
             self.gameover = True
 
     def init_game(self):
         self.board = new_board()
+        self.lines = 0
         self.bag = []
         self.bag += random.sample(tetris_shapes, len(tetris_shapes)) + random.sample(tetris_shapes, len(tetris_shapes))
         self.next_stone = self.bag.pop(0)
         self.new_stone()
         self.level = 1
         self.score = 0
-        self.lines = 0
         self.hold_stone = [[0,0,0],[0,0,0]]
         self.switched = False
+        self.timer = time.time()
         pygame.time.set_timer(pygame.USEREVENT+1, 1000)
 
     def disp_msg(self, msg, topleft):
@@ -345,7 +349,7 @@ class TetrisApp(object):
             self.screen.fill((0,0,0))
             if self.gameover:
                 self.center_msg("""Game Over!\nYour score: %d
-Press enter to continue""" % self.score)
+Press enter to continue""" % abs(self.timer))
             else:
                 if self.paused:
                     self.center_msg("Paused")
